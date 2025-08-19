@@ -3,10 +3,10 @@ const qs = require("querystring");
 
 exports.handler = async function(event, context) {
   console.log("=== Function invoked ===");
-  console.log("Received event body:", event.body);
+  console.log("Full event object:", event);
 
   try {
-    // 1️⃣ Получаем данные от Prodamus
+    // 1️⃣ Получаем тело запроса
     if (!event.body) {
       console.error("No body in request");
       return { statusCode: 400, body: "Missing request body" };
@@ -39,8 +39,44 @@ exports.handler = async function(event, context) {
     const expirationStr = expirationDate.toISOString().split("T")[0];
     console.log("Calculated expiration date:", expirationStr);
 
-    // ✅ Здесь можно вставлять вызовы Tilda и Sheet.best
-    return { statusCode: 200, body: JSON.stringify({ message: "Function works!" }) };
+    // 3️⃣ Добавляем пользователя в Tilda
+    const TILDA_PUBLIC_KEY = "gpesp7k6wvdz3iced0lu";
+    const TILDA_SECRET_KEY = "3db1e83f29703b9778db";
+    const PROJECT_ID = 420986;
+    const GROUP_ID = 1349921;
+
+    console.log("Posting to Tilda:", { email, name, expirationStr });
+
+    const tildaResponse = await axios.post(
+      "https://api.tilda.cc/v1/members/add",
+      qs.stringify({
+        publickey: TILDA_PUBLIC_KEY,
+        secretkey: TILDA_SECRET_KEY,
+        projectid: PROJECT_ID,
+        groupid: GROUP_ID,
+        email,
+        name,
+        expiration: expirationStr
+      }),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
+
+    console.log("Tilda response:", tildaResponse.data);
+
+    // 4️⃣ Записываем данные в Google Sheet (Sheet.best)
+    const SHEET_BEST_URL = "https://api.sheet.best/sheets/5d3aa812-9621-4f76-9bc8-fa0583813ede";
+    const SHEET_BEST_KEY = "qABz_WB-ZPrZTaqdXqEyhY7e0S$_gekFQZN6El0qc6P7B$7YPKmb_VZHDrmfzcvh";
+
+    const sheetResponse = await axios.post(
+      SHEET_BEST_URL,
+      { name, "e-mail": email, data, rate },
+      { headers: { "X-Api-Key": SHEET_BEST_KEY } }
+    );
+
+    console.log("Sheet.best response:", sheetResponse.data);
+
+    // ✅ Всё прошло успешно
+    return { statusCode: 200, body: JSON.stringify({ message: "Success" }) };
 
   } catch (err) {
     console.error("Error caught in handler:", err.message, err.stack);
