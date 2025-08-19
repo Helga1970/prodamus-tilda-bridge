@@ -1,5 +1,4 @@
 const axios = require("axios");
-const qs = require("querystring");
 
 exports.handler = async function(event, context) {
   console.log("=== Function invoked ===");
@@ -47,17 +46,18 @@ exports.handler = async function(event, context) {
 
     console.log("Posting to Tilda:", { email, name, expirationStr });
 
+    const tildaData = new URLSearchParams();
+    tildaData.append("publickey", TILDA_PUBLIC_KEY);
+    tildaData.append("secretkey", TILDA_SECRET_KEY);
+    tildaData.append("projectid", PROJECT_ID);
+    tildaData.append("groupid", GROUP_ID);
+    tildaData.append("email", email);
+    tildaData.append("name", name);
+    tildaData.append("expiration", expirationStr);
+
     const tildaResponse = await axios.post(
       "https://api.tildacdn.com/v1/members/add",
-      qs.stringify({
-        publickey: TILDA_PUBLIC_KEY,
-        secretkey: TILDA_SECRET_KEY,
-        projectid: PROJECT_ID,
-        groupid: GROUP_ID,
-        email,
-        name,
-        expiration: expirationStr
-      }),
+      tildaData.toString(),
       { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
 
