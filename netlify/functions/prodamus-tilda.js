@@ -7,14 +7,15 @@ exports.handler = async function(event, context) {
 
   try {
     // 1️⃣ Получаем тело запроса
-    if (!event.body) {
+    const bodyContent = event.body || event.rawBody; // <- исправлено
+    if (!bodyContent) {
       console.error("No body in request");
       return { statusCode: 400, body: "Missing request body" };
     }
 
     let body;
     try {
-      body = JSON.parse(event.body);
+      body = JSON.parse(bodyContent); // <- парсим bodyContent
     } catch (parseErr) {
       console.error("JSON parse error:", parseErr.message);
       return { statusCode: 400, body: "Invalid JSON" };
