@@ -1,85 +1,51 @@
-const axios = require("axios");
+// Импорт необходимых модулей
+const axios = require('axios');
 
-exports.handler = async function(event, context) {
-  console.log("=== Function invoked ===");
-  console.log("Full event object:", event);
+exports.handler = async (event) => {
+  // Проверка метода запроса
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' };
+  }
+
+  // Парсинг данных из вебхука Продамуса
+  const prodamusData = JSON.parse(event.body);
+
+  // Проверка статуса платежа
+  if (prodamusData.status !== 'success') {
+    return { statusCode: 200, body: 'Payment not successful, no action taken' };
+  }
+
+  // Извлечение данных пользователя (email и имя)
+  // Названия полей (customer_email, customer_name) должны соответствовать тому,
+  // как их отправляет Продамус.
+  const userEmail = prodamusData.customer_email;
+  const userName = prodamusData.customer_name;
+
+  // --- Запрос к API Тильды ---
+  const tildaApiUrl = `https://api.tildacdn.info/v1/updateuser/`; 
+  const tildaApiKey = process.env.TILDA_API_KEY;
 
   try {
-    // 1️⃣ Получаем тело запроса
-    if (!event.body) {
-      console.error("No body in request");
-      return { statusCode: 400, body: "Missing request body" };
-    }
+    const response = await axios.post(tildaApiUrl, {
+      publickey: 'gpesp7k6wvdz3iced0lu',
+      secretkey: tildaApiKey,
+      projectid: '420986', // ID вашего проекта
+      groupid: '1349921',  // ID вашей группы
+      email: userEmail,
+      name: userName // Передача имени пользователя
+    });
 
-    let body;
-    try {
-      body = JSON.parse(event.body);
-    } catch (parseErr) {
-      console.error("JSON parse error:", parseErr.message);
-      return { statusCode: 400, body: "Invalid JSON" };
-    }
+    console.log('Tilda API response:', response.data);
 
-    const { name, email, rate, data } = body;
-
-    if (!name || !email || !rate || !data) {
-      console.error("Missing required fields:", body);
-      return { statusCode: 400, body: "Missing required fields" };
-    }
-
-    // 2️⃣ Вычисляем срок доступа
-    const days = rate === 350 ? 30 : rate === 3000 ? 365 : null;
-    if (!days) {
-      console.error("Invalid rate:", rate);
-      return { statusCode: 400, body: "Invalid rate" };
-    }
-
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + days);
-    const expirationStr = expirationDate.toISOString().split("T")[0];
-    console.log("Calculated expiration date:", expirationStr);
-
-    // 3️⃣ Добавляем пользователя в Tilda
-    const TILDA_PUBLIC_KEY = "gpesp7k6wvdz3iced0lu";
-    const TILDA_SECRET_KEY = "3db1e83f29703b9778db";
-    const PROJECT_ID = 420986;
-    const GROUP_ID = 1349921;
-
-    console.log("Posting to Tilda:", { email, name, expirationStr });
-
-    const tildaData = new URLSearchParams();
-    tildaData.append("publickey", TILDA_PUBLIC_KEY);
-    tildaData.append("secretkey", TILDA_SECRET_KEY);
-    tildaData.append("projectid", PROJECT_ID);
-    tildaData.append("groupid", GROUP_ID);
-    tildaData.append("email", email);
-    tildaData.append("name", name);
-    tildaData.append("expiration", expirationStr);
-
-    const tildaResponse = await axios.post(
-      "https://api.tildacdn.com/v1/members/add",
-      tildaData.toString(),
-      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-    );
-
-    console.log("Tilda response:", tildaResponse.data);
-
-    // 4️⃣ Записываем данные в Google Sheet (Sheet.best)
-    const SHEET_BEST_URL = "https://api.sheet.best/sheets/5d3aa812-9621-4f76-9bc8-fa0583813ede";
-    const SHEET_BEST_KEY = "qABz_WB-ZPrZTaqdXqEyhY7e0S$_gekFQZN6El0qc6P7B$7YPKmb_VZHDrmfzcvh";
-
-    const sheetResponse = await axios.post(
-      SHEET_BEST_URL,
-      { name, "e-mail": email, data, rate },
-      { headers: { "X-Api-Key": SHEET_BEST_KEY } }
-    );
-
-    console.log("Sheet.best response:", sheetResponse.data);
-
-    // ✅ Всё прошло успешно
-    return { statusCode: 200, body: JSON.stringify({ message: "Success" }) };
-
-  } catch (err) {
-    console.error("Error caught in handler:", err.message, err.stack);
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Success" })
+    };
+  } catch (error) {
+    console.error('Error with Tilda API:', error.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal Server Error' })
+    };
   }
 };
