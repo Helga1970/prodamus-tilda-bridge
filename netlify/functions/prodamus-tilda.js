@@ -1,21 +1,22 @@
 // Импорт необходимых модулей
 const axios = require('axios');
+const querystring = require('querystring'); // Добавьте эту строку
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const prodamusData = JSON.parse(event.body);
+  // --- ЭТО ИСПРАВЛЕННАЯ СТРОКА ---
+  const prodamusData = querystring.parse(event.body); 
+  // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-  if (prodamusData.status !== 'success') {
-    return { statusCode: 200, body: 'Payment not successful, no action taken' };
-  }
-
+  // Обратите внимание: данные из URL-кодированного формата всегда являются строками.
+  // Преобразуем сумму в число для правильного сравнения.
   const userEmail = prodamusData.customer_email || prodamusData.payer_email;
   const userName = prodamusData.customer_name || prodamusData.payer_name || prodamusData.client_name;
   
-  const paymentAmount = prodamusData.amount || prodamusData.price; 
+  const paymentAmount = Number(prodamusData.amount || prodamusData.price); 
 
   let groupId;
 
