@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Helga1970/prodamus-tilda-bridge#readme",
   "description": "",
   "dependencies": {
-    "axios": "^1.11.0"
+    "axios": "^1.11.0",
+    "querystring": "^0.2.1"
   }
 }

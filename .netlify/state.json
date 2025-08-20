@@ -1,0 +1,20 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Caorle",
+			"country": {
+				"code": "IT",
+				"name": "Italy"
+			},
+			"subdivision": {
+				"code": "34",
+				"name": "Veneto"
+			},
+			"timezone": "Europe/Rome",
+			"latitude": 45.6001,
+			"longitude": 12.8742,
+			"postalCode": "30021"
+		},
+		"timestamp": 1755614926520
+	}
+}
