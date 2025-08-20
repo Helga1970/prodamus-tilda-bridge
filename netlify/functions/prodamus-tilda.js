@@ -7,8 +7,16 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const prodamusData = querystring.parse(event.body);
+  let prodamusData;
+  try {
+    // Пытаемся распарсить как JSON
+    prodamusData = JSON.parse(event.body);
+  } catch (e) {
+    // Если не JSON, парсим как URL-кодированные данные
+    prodamusData = querystring.parse(event.body);
+  }
 
+  // Проверяем статус платежа. Используем payment_status
   if (prodamusData.payment_status !== 'success') {
     console.log('Статус платежа не "success", прекращаем работу.');
     return { statusCode: 200, body: 'Payment not successful, no action taken' };
@@ -17,15 +25,17 @@ exports.handler = async (event) => {
   const userEmail = prodamusData.customer_email || prodamusData.payer_email;
   const userName = prodamusData.customer_name || prodamusData.payer_name || prodamusData.client_name;
   
+  // Используем поле 'sum' и преобразуем его в число
   const paymentAmount = Number(prodamusData.sum); 
 
   let groupId;
 
-  // Проверяем сумму платежа и выбираем новую тестовую группу
+  // Проверяем сумму платежа и выбираем нужную группу
   if (paymentAmount === 350) {
-    groupId = '1361213'; // НОВЫЙ ID ГРУППЫ
+    groupId = '1349921'; // ВОССТАНОВЛЕННЫЙ ID ГРУППЫ
   } else if (paymentAmount === 3000) {
-    // В этом тесте мы используем только 350 рублей
+    groupId = '1360885';
+  } else {
     console.log('Сумма платежа не соответствует ни одному тарифу.');
     return {
       statusCode: 200,
