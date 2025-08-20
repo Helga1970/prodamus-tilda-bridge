@@ -2,26 +2,35 @@
 const axios = require('axios');
 
 exports.handler = async (event) => {
-  // Проверка метода запроса
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  // Парсинг данных из вебхука Продамуса
   const prodamusData = JSON.parse(event.body);
 
-  // Проверка статуса платежа
   if (prodamusData.status !== 'success') {
     return { statusCode: 200, body: 'Payment not successful, no action taken' };
   }
 
-  // Извлечение данных пользователя (email и имя)
-  // Названия полей (customer_email, customer_name) должны соответствовать тому,
-  // как их отправляет Продамус.
-  const userEmail = prodamusData.customer_email;
-  const userName = prodamusData.customer_name;
+  const userEmail = prodamusData.customer_email || prodamusData.payer_email;
+  const userName = prodamusData.customer_name || prodamusData.payer_name || prodamusData.client_name;
+  
+  const paymentAmount = prodamusData.amount || prodamusData.price; 
 
-  // --- Запрос к API Тильды ---
+  let groupId;
+
+  // Проверяем точную сумму платежа
+  if (paymentAmount === 350) {
+    groupId = '1349921';
+  } else if (paymentAmount === 3000) {
+    groupId = '1360885';
+  } else {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Unknown payment amount, no action taken" })
+    };
+  }
+
   const tildaApiUrl = `https://api.tildacdn.info/v1/updateuser/`; 
   const tildaApiKey = process.env.TILDA_API_KEY;
 
@@ -29,10 +38,10 @@ exports.handler = async (event) => {
     const response = await axios.post(tildaApiUrl, {
       publickey: 'gpesp7k6wvdz3iced0lu',
       secretkey: tildaApiKey,
-      projectid: '420986', // ID вашего проекта
-      groupid: '1349921',  // ID вашей группы
+      projectid: '420986',
+      groupid: groupId, 
       email: userEmail,
-      name: userName // Передача имени пользователя
+      name: userName
     });
 
     console.log('Tilda API response:', response.data);
