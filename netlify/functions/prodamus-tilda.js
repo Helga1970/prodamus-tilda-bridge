@@ -7,25 +7,20 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  // Парсим данные, которые приходят от Продамуса
   const prodamusData = querystring.parse(event.body);
 
-  // Выводим все данные в логи для отладки
-  console.log('Получены данные от Продамуса:', prodamusData);
-
-  // Проверяем статус платежа.
-  // Если статус не 'success', то дальнейших действий не требуется
-  if (prodamusData.status !== 'success') {
+  // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+  if (prodamusData.payment_status !== 'success') {
     console.log('Статус платежа не "success", прекращаем работу.');
     return { statusCode: 200, body: 'Payment not successful, no action taken' };
   }
-
+  
   // Используем поля, которые пришли от Продамуса
   const userEmail = prodamusData.customer_email || prodamusData.payer_email;
   const userName = prodamusData.customer_name || prodamusData.payer_name || prodamusData.client_name;
   
   // Преобразуем сумму в число, так как она приходит как строка
-  const paymentAmount = Number(prodamusData.amount || prodamusData.price); 
+  const paymentAmount = Number(prodamusData.sum); 
 
   let groupId;
 
