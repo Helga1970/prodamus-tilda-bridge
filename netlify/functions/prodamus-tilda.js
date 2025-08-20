@@ -9,27 +9,23 @@ exports.handler = async (event) => {
 
   const prodamusData = querystring.parse(event.body);
 
-  // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
   if (prodamusData.payment_status !== 'success') {
     console.log('Статус платежа не "success", прекращаем работу.');
     return { statusCode: 200, body: 'Payment not successful, no action taken' };
   }
   
-  // Используем поля, которые пришли от Продамуса
   const userEmail = prodamusData.customer_email || prodamusData.payer_email;
   const userName = prodamusData.customer_name || prodamusData.payer_name || prodamusData.client_name;
   
-  // Преобразуем сумму в число, так как она приходит как строка
   const paymentAmount = Number(prodamusData.sum); 
 
   let groupId;
 
-  // Проверяем сумму платежа и выбираем нужную группу
+  // Проверяем сумму платежа и выбираем новую тестовую группу
   if (paymentAmount === 350) {
-    groupId = '1349921';
+    groupId = '1361213'; // НОВЫЙ ID ГРУППЫ
   } else if (paymentAmount === 3000) {
-    groupId = '1360885';
-  } else {
+    // В этом тесте мы используем только 350 рублей
     console.log('Сумма платежа не соответствует ни одному тарифу.');
     return {
       statusCode: 200,
