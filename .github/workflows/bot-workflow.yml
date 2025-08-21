@@ -1,0 +1,52 @@
+name: Bot Trigger
+
+on:
+  workflow_dispatch:  # запуск вручную или через API
+    inputs:
+      name:
+        description: "Имя пользователя"
+        required: true
+      email:
+        description: "Email пользователя"
+        required: true
+      rate:
+        description: "Сумма (rate)"
+        required: true
+      data:
+        description: "Дата создания/доступа"
+        required: true
+
+jobs:
+  add_user:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Add user
+        run: |
+          NAME="${{ github.event.inputs.name }}"
+          EMAIL="${{ github.event.inputs.email }}"
+          RATE="${{ github.event.inputs.rate }}"
+          DATA="${{ github.event.inputs.data }}"
+
+          # 🔹 Рассчитаем срок доступа
+          if [ "$RATE" -eq 350 ]; then
+            DAYS=30
+          elif [ "$RATE" -eq 3000 ]; then
+            DAYS=365
+          else
+            echo "Неизвестный rate: $RATE"
+            exit 1
+          fi
+
+          EXPIRATION_DATE=$(date -d "$DATA +$DAYS days" +%Y-%m-%d)
+
+          echo "Добавляем пользователя:"
+          echo "Имя: $NAME"
+          echo "Email: $EMAIL"
+          echo "Сумма: $RATE"
+          echo "Дата доступа до: $EXPIRATION_DATE"
+
+          # 🔹 Тут можно вызвать скрипт для добавления пользователя через API Tilda
+          # node add_user.js "$NAME" "$EMAIL" "$EXPIRATION_DATE" "$RATE"
